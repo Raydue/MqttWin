@@ -22,6 +22,7 @@ namespace MqttWin
      
        public static MqttClient client;
         static string clientid;
+        
              
 
         public Form1()
@@ -32,15 +33,17 @@ namespace MqttWin
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            
+            
         }
        
         static void client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
+            
             string ReceiveMsg = Encoding.UTF8.GetString(e.Message);
-
+            string ReceiveTpc = e.Topic;
             //Console.WriteLine(ReceiveMsg);
-            Console.WriteLine($"{DateTime.Now}\t{ReceiveMsg.Split(',').Length}");
+            Console.WriteLine(ReceiveTpc+$": {DateTime.Now}\t{ReceiveMsg.Split(',').Length}");
             Console.WriteLine("===============================================");
         }
         List<TreeNode> nodechecked = new List<TreeNode>();
@@ -67,7 +70,7 @@ namespace MqttWin
         {
             foreach (TreeNode node in nodes)
             {
-                if (node.Checked)               //先把想要刪除掉的node加入到list中
+                if (node.Checked)               //如果有找到，就加到List中
                 {
                     connectchecked.Add(node.Text) ;
                    
@@ -80,16 +83,20 @@ namespace MqttWin
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e)      //訂閱功能
         {
 
             for(int i = 0; i <= treeView1.Nodes.Count; i++)
             {
                 if (treeView1.Nodes[i].Checked)
                 {
-                    checkednodesMt(treeView1.Nodes[i].Nodes);
+                    checkednodesMt(treeView1.Nodes[i].Nodes);       //將treeview中的第二層放到遍尋方法中找出被勾選的nodes
                     break;
                 }
+               /* else
+                {
+                    MessageBox.Show("請先連上Broker!!");
+                }*/
                 
             }
             
@@ -98,17 +105,17 @@ namespace MqttWin
                 string a = sub.Text;
                 client.Subscribe(new string[] { a }, new byte[] { 0 });
             }
-               /* if (TopicsHome.Contains(topic))
-                {
-                     client.Unsubscribe(new string[] { topic });
-                     TopicsHome.Remove(topic);
-                }
-                else
-                {
-                     client.Subscribe(new string[] { topic }, new byte[] { 0 });
-                     TopicsHome.Add(topic);                    
-                }*/
-                
+            /* if (TopicsHome.Contains(topic))
+             {
+                  client.Unsubscribe(new string[] { topic });
+                  TopicsHome.Remove(topic);
+             }
+             else
+             {
+                  client.Subscribe(new string[] { topic }, new byte[] { 0 });
+                  TopicsHome.Add(topic);                    
+             }*/
+            nodechecked.Clear();
                                   
         }
 
@@ -117,8 +124,8 @@ namespace MqttWin
         private void button2_Click(object sender, EventArgs e)
         {
                     
-            checkedconnectMt(treeView1.Nodes);
-            client = new MqttClient(connectchecked.Last());
+            checkedconnectMt(treeView1.Nodes);          //先呼叫遍尋方法
+            client = new MqttClient(connectchecked.Last());     
             clientid = Guid.NewGuid().ToString();
 
             client.Connect(clientid);
@@ -126,11 +133,13 @@ namespace MqttWin
             client.MqttMsgPublishReceived += client_MqttMsgPublishReceived;
             client.ConnectionClosed += Form1_Formclosing;
 
-            for(int i = 0; i < treeView1.Nodes.Count; i++)
+            connectchecked.Clear();
+
+            for(int i = 0; i < treeView1.Nodes.Count; i++)    //從第一層中找到第一個checkbox有打勾的
             {
                 if (treeView1.Nodes[i].Checked)
                 {
-                    treeView1.Nodes[i].Tag = client;
+                    treeView1.Nodes[i].Tag = client;          //有打勾的加到所屬的node裡面
                     break;
                 }                  
             }           
@@ -150,6 +159,7 @@ namespace MqttWin
         private void button4_Click(object sender, EventArgs e)
         {
             string topic = textBox1.Text;
+            
             try
             {
                 treeView1.SelectedNode.Nodes.Add(topic);
@@ -160,5 +170,36 @@ namespace MqttWin
             }
             
         }
+        private void true2false(object sender, EventArgs e)
+        {
+            for(int i = 0; i < treeView1.Nodes.Count; i++)
+            {
+               
+                    for(int u = 0; u < treeView1.Nodes[i].Nodes.Count;u++)
+                    {
+                        if (treeView1.Nodes[i].Nodes[u].Checked == false)
+                        {
+                            MessageBox.Show(treeView1.Nodes[i].Nodes[u].Text);
+                            break;
+                        }
+                            
+                        
+                    }
+                
+            }
+                     
+        }
+
+        private void treeView1_AfterCheck(object sender, TreeViewEventArgs e)
+        {
+            if(e.Node.Checked==false && e.Node.Level!=0)
+            {
+                client.Unsubscribe(new string[] { e.Node.Text } );
+                MessageBox.Show("topic:"+e.Node.Text + " 已經退訂!!");              
+            }
+           
+           
+        }
+       
     }
 }
