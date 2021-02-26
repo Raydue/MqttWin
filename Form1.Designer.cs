@@ -50,6 +50,7 @@ namespace MqttWin
             // 
             // button1
             // 
+            this.button1.Enabled = false;
             this.button1.Location = new System.Drawing.Point(405, 316);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(96, 38);
@@ -67,6 +68,7 @@ namespace MqttWin
             // 
             // button2
             // 
+            this.button2.Enabled = false;
             this.button2.Location = new System.Drawing.Point(405, 171);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(96, 33);
@@ -105,7 +107,6 @@ namespace MqttWin
             this.treeView1.Size = new System.Drawing.Size(330, 297);
             this.treeView1.TabIndex = 6;
             this.treeView1.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.treeView1_AfterCheck);
-            this.treeView1.EnabledChanged += new System.EventHandler(this.true2false);
             // 
             // button3
             // 

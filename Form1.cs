@@ -47,7 +47,7 @@ namespace MqttWin
             Console.WriteLine("===============================================");
         }
         List<TreeNode> nodechecked = new List<TreeNode>();
-        List<string> connectchecked = new List<string>();
+        List<TreeNode> connectchecked = new List<TreeNode>();
 
        
       
@@ -70,9 +70,9 @@ namespace MqttWin
         {
             foreach (TreeNode node in nodes)
             {
-                if (node.Checked)               //如果有找到，就加到List中
+                if (node.Checked && node.Level==0)               //如果有找到，就加到List中
                 {
-                    connectchecked.Add(node.Text) ;
+                    connectchecked.Add(node) ;
                    
                 }
                 else
@@ -100,21 +100,11 @@ namespace MqttWin
                 
             }
             
-            foreach(var sub in nodechecked)
+            foreach(var sub in nodechecked)                             //如果回頭連線會有重複訂閱收值的問題
             {
                 string a = sub.Text;
                 client.Subscribe(new string[] { a }, new byte[] { 0 });
-            }
-            /* if (TopicsHome.Contains(topic))
-             {
-                  client.Unsubscribe(new string[] { topic });
-                  TopicsHome.Remove(topic);
-             }
-             else
-             {
-                  client.Subscribe(new string[] { topic }, new byte[] { 0 });
-                  TopicsHome.Add(topic);                    
-             }*/
+            }         
             nodechecked.Clear();
                                   
         }
@@ -125,7 +115,22 @@ namespace MqttWin
         {
                     
             checkedconnectMt(treeView1.Nodes);          //先呼叫遍尋方法
-            client = new MqttClient(connectchecked.Last());     
+            try
+            {
+                foreach(var io in connectchecked)
+                {
+                    
+                    MessageBox.Show(io.Text);
+                }
+                
+                client = new MqttClient(connectchecked.Last().Text);
+            }
+            catch(Exception ex)
+            {
+
+                MessageBox.Show(ex.Message);
+            }
+               
             clientid = Guid.NewGuid().ToString();
 
             client.Connect(clientid);
@@ -137,7 +142,7 @@ namespace MqttWin
 
             for(int i = 0; i < treeView1.Nodes.Count; i++)    //從第一層中找到第一個checkbox有打勾的
             {
-                if (treeView1.Nodes[i].Checked)
+                if (treeView1.Nodes[i].Checked )
                 {
                     treeView1.Nodes[i].Tag = client;          //有打勾的加到所屬的node裡面
                     break;
@@ -162,7 +167,9 @@ namespace MqttWin
             
             try
             {
-                treeView1.SelectedNode.Nodes.Add(topic);
+                treeView1.SelectedNode.Nodes.Add(topic) ;
+                
+                
             }
             catch (Exception)
             {
@@ -170,7 +177,7 @@ namespace MqttWin
             }
             
         }
-        private void true2false(object sender, EventArgs e)
+        /*private void true2false(object sender, EventArgs e)
         {
             for(int i = 0; i < treeView1.Nodes.Count; i++)
             {
@@ -184,22 +191,39 @@ namespace MqttWin
                         }
                             
                         
-                    }
-                
+                    }              
             }
                      
-        }
+        }*/
 
         private void treeView1_AfterCheck(object sender, TreeViewEventArgs e)
         {
             if(e.Node.Checked==false && e.Node.Level!=0)
             {
-                client.Unsubscribe(new string[] { e.Node.Text } );
-                MessageBox.Show("topic:"+e.Node.Text + " 已經退訂!!");              
+                 client.Unsubscribe(new string[] { e.Node.Text } );
+                MessageBox.Show("topic:"+e.Node.Text + " 已經退訂!!");
+               // MessageBox.Show(e.Node.FullPath);
             }
-           
-           
+
+            if (e.Node.Level == 0 && e.Node.Checked == true)
+            {
+                button2.Enabled = true;      
+            }
+            else
+            {
+                button2.Enabled = false;             
+            }
+
+            if ( e.Node.Level > 0 && e.Node.Checked == true )
+            {
+                button1.Enabled = true;
+            }
+            else
+            {
+                button1.Enabled = false;
+            }
+
         }
-       
+     
     }
 }
