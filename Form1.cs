@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 using uPLibrary.Networking.M2Mqtt.Exceptions;
+using Newtonsoft.Json.Linq;
 
 namespace MqttWin
 {
@@ -18,10 +19,10 @@ namespace MqttWin
         [System.Runtime.InteropServices.DllImport("kernel32.dll")]
         static extern bool AllocConsole();
 
-        List<string> TopicsHome = new List<string>();
-     
-       public static MqttClient client;
-        static string clientid;
+       
+       private List<string> clients = new List<string>();
+        
+      
         
              
 
@@ -43,14 +44,13 @@ namespace MqttWin
             string ReceiveMsg = Encoding.UTF8.GetString(e.Message);
             string ReceiveTpc = e.Topic;
             //Console.WriteLine(ReceiveMsg);
+            
             Console.WriteLine(ReceiveTpc+$": {DateTime.Now}\t{ReceiveMsg.Split(',').Length}");
             Console.WriteLine("===============================================");
         }
         List<TreeNode> nodechecked = new List<TreeNode>();
         List<TreeNode> connectchecked = new List<TreeNode>();
 
-       
-      
         void checkednodesMt(TreeNodeCollection nodes)
         {
             foreach (TreeNode node in nodes)
@@ -83,76 +83,14 @@ namespace MqttWin
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)      //訂閱功能
-        {
-
-            for(int i = 0; i <= treeView1.Nodes.Count; i++)
-            {
-                if (treeView1.Nodes[i].Checked)
-                {
-                    checkednodesMt(treeView1.Nodes[i].Nodes);       //將treeview中的第二層放到遍尋方法中找出被勾選的nodes
-                    break;
-                }
-               /* else
-                {
-                    MessageBox.Show("請先連上Broker!!");
-                }*/
-                
-            }
-            
-            foreach(var sub in nodechecked)                             //如果回頭連線會有重複訂閱收值的問題
-            {
-                string a = sub.Text;
-                client.Subscribe(new string[] { a }, new byte[] { 0 });
-            }         
-            nodechecked.Clear();
-                                  
-        }
-
-        
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-                    
-            checkedconnectMt(treeView1.Nodes);          //先呼叫遍尋方法
-            try
-            {
-                foreach(var io in connectchecked)
-                {
-                    
-                    MessageBox.Show(io.Text);
-                }
-                
-                client = new MqttClient(connectchecked.Last().Text);
-            }
-            catch(Exception ex)
-            {
-
-                MessageBox.Show(ex.Message);
-            }
-               
-            clientid = Guid.NewGuid().ToString();
-
-            client.Connect(clientid);
-            MessageBox.Show(connectchecked.Last()+" 已連線!");
-            client.MqttMsgPublishReceived += client_MqttMsgPublishReceived;
-            client.ConnectionClosed += Form1_Formclosing;
-
-            connectchecked.Clear();
-
-            for(int i = 0; i < treeView1.Nodes.Count; i++)    //從第一層中找到第一個checkbox有打勾的
-            {
-                if (treeView1.Nodes[i].Checked )
-                {
-                    treeView1.Nodes[i].Tag = client;          //有打勾的加到所屬的node裡面
-                    break;
-                }                  
-            }           
-        }
-       
         private void Form1_Formclosing(object sender, EventArgs e)
         {
-            client.Disconnect();
+            foreach(var close in clients)
+            {
+                MqttClient client = new MqttClient(close);
+                client.Disconnect();
+            }
+           
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -177,35 +115,38 @@ namespace MqttWin
             }
             
         }
-        /*private void true2false(object sender, EventArgs e)
-        {
-            for(int i = 0; i < treeView1.Nodes.Count; i++)
-            {
-               
-                    for(int u = 0; u < treeView1.Nodes[i].Nodes.Count;u++)
-                    {
-                        if (treeView1.Nodes[i].Nodes[u].Checked == false)
-                        {
-                            MessageBox.Show(treeView1.Nodes[i].Nodes[u].Text);
-                            break;
-                        }
-                            
-                        
-                    }              
-            }
-                     
-        }*/
+        
 
         private void treeView1_AfterCheck(object sender, TreeViewEventArgs e)
         {
-            if(e.Node.Checked==false && e.Node.Level!=0)
+            if (e.Node.Level == 0&&e.Node.Checked==true)
             {
-                 client.Unsubscribe(new string[] { e.Node.Text } );
-                MessageBox.Show("topic:"+e.Node.Text + " 已經退訂!!");
-               // MessageBox.Show(e.Node.FullPath);
+                //連線
+                
+                MqttClient client = new MqttClient(e.Node.Text);
+                string clientid = Guid.NewGuid().ToString();
+                client.Connect(clientid);
+                client.MqttMsgPublishReceived += client_MqttMsgPublishReceived;
+                client.ConnectionClosed += Form1_Formclosing;
+                // clients.Add(new MqttClient(e.Node.Text));
+                clients.Add(e.Node.Text);
+                e.Node.Tag = client;
+                MessageBox.Show(e.Node.Text + " 已連線!");
+            }
+            else if (e.Node.Level > 0 && e.Node.Checked==false)
+            {
+                //Unsub
+                MqttClient mqttClient = (MqttClient)e.Node.Parent.Tag;
+                mqttClient.Unsubscribe(new string[] { e.Node.Text });
+            }
+            else if (e.Node.Level > 0 && e.Node.Checked == true)
+            {
+                //Subscribe
+                MqttClient mqttClient = (MqttClient)e.Node.Parent.Tag;
+                mqttClient.Subscribe(new string[] { e.Node.Text }, new byte[] { 0 });
             }
 
-            if (e.Node.Level == 0 && e.Node.Checked == true)
+           /* if (e.Node.Level == 0 && e.Node.Checked == true)
             {
                 button2.Enabled = true;      
             }
@@ -221,7 +162,7 @@ namespace MqttWin
             else
             {
                 button1.Enabled = false;
-            }
+            }*/
 
         }
      
