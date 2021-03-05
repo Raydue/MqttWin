@@ -11,6 +11,7 @@ using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 using uPLibrary.Networking.M2Mqtt.Exceptions;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace MqttWin
 {
@@ -18,13 +19,11 @@ namespace MqttWin
     {
         [System.Runtime.InteropServices.DllImport("kernel32.dll")]
         static extern bool AllocConsole();
+        
 
-       
-       private List<string> clients = new List<string>();
-        
-      
-        
-             
+        private List<string> clients = new List<string>();
+        delegate void Tagparsing(string text); 
+                  
 
         public Form1()
         {
@@ -34,20 +33,34 @@ namespace MqttWin
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            
-            
+                        
         }
        
-        static void client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
+       /* static void client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
-            
+            SubManager sub = new SubManager();
             string ReceiveMsg = Encoding.UTF8.GetString(e.Message);
             string ReceiveTpc = e.Topic;
-            //Console.WriteLine(ReceiveMsg);
-            
+            Console.WriteLine(ReceiveMsg);*/
+           /* Console.WriteLine(sub.brokername);
             Console.WriteLine(ReceiveTpc+$": {DateTime.Now}\t{ReceiveMsg.Split(',').Length}");
-            Console.WriteLine("===============================================");
-        }
+            Console.WriteLine("===============================================");*/
+            /*Console.WriteLine(DateTime.Now);
+            
+            string msg = Encoding.UTF8.GetString(e.Message);
+            JObject msgPayload = JsonConvert.DeserializeObject<JObject>(Encoding.UTF8.GetString(e.Message));
+
+            foreach (JObject jo in (from data in msgPayload["values"]
+                                    group data by data["id"] into g
+                                    select g.First()))
+            {
+                //Console.WriteLine($"{jo["id"]} \t {jo["v"]}");
+                System.Console.WriteLine($"{jo["id"]} \t {jo["v"]}");
+                
+            }
+            
+            Console.WriteLine("===============================================");*/
+        //}
         List<TreeNode> nodechecked = new List<TreeNode>();
         List<TreeNode> connectchecked = new List<TreeNode>();
 
@@ -88,7 +101,7 @@ namespace MqttWin
             foreach(var close in clients)
             {
                 MqttClient client = new MqttClient(close);
-                client.Disconnect();
+                client.Disconnect();     
             }
            
         }
@@ -97,6 +110,7 @@ namespace MqttWin
         {
             string a = textBox2.Text;    
             treeView1.Nodes.Add(a);
+           
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -106,8 +120,7 @@ namespace MqttWin
             try
             {
                 treeView1.SelectedNode.Nodes.Add(topic) ;
-                
-                
+                               
             }
             catch (Exception)
             {
@@ -122,15 +135,16 @@ namespace MqttWin
             if (e.Node.Level == 0&&e.Node.Checked==true)
             {
                 //連線
-                
-                MqttClient client = new MqttClient(e.Node.Text);
-                string clientid = Guid.NewGuid().ToString();
-                client.Connect(clientid);
-                client.MqttMsgPublishReceived += client_MqttMsgPublishReceived;
-                client.ConnectionClosed += Form1_Formclosing;
-                // clients.Add(new MqttClient(e.Node.Text));
-                clients.Add(e.Node.Text);
-                e.Node.Tag = client;
+                /* MqttClient client = new MqttClient(e.Node.Text);
+                 string clientid = Guid.NewGuid().ToString();
+                 client.Connect(clientid);
+                 client.MqttMsgPublishReceived += client_MqttMsgPublishReceived;
+                 client.ConnectionClosed += Form1_Formclosing;
+                 // clients.Add(new MqttClient(e.Node.Text));
+                 clients.Add(e.Node.Text);*/
+                SubManager manager = new SubManager();
+              //  manager.connecter(e.Node.Text);
+                e.Node.Tag = manager.CTag;
                 MessageBox.Show(e.Node.Text + " 已連線!");
             }
             else if (e.Node.Level > 0 && e.Node.Checked==false)
@@ -138,31 +152,18 @@ namespace MqttWin
                 //Unsub
                 MqttClient mqttClient = (MqttClient)e.Node.Parent.Tag;
                 mqttClient.Unsubscribe(new string[] { e.Node.Text });
+                
             }
             else if (e.Node.Level > 0 && e.Node.Checked == true)
             {
                 //Subscribe
-                MqttClient mqttClient = (MqttClient)e.Node.Parent.Tag;
-                mqttClient.Subscribe(new string[] { e.Node.Text }, new byte[] { 0 });
+                SubManager manager = new SubManager(e.Node.Parent.Text,e.Node.Text);
+                manager.brokername = e.Node.Parent.Text;
+               // manager.Subscriber((MqttClient)e.Node.Parent.Tag, e.Node.Text, e.Node.Parent.Text,manager.brokername); 
+                
+                /*MqttClient mqttClient = (MqttClient)e.Node.Parent.Tag;
+                mqttClient.Subscribe(new string[] { e.Node.Text }, new byte[] { 0 });*/
             }
-
-           /* if (e.Node.Level == 0 && e.Node.Checked == true)
-            {
-                button2.Enabled = true;      
-            }
-            else
-            {
-                button2.Enabled = false;             
-            }
-
-            if ( e.Node.Level > 0 && e.Node.Checked == true )
-            {
-                button1.Enabled = true;
-            }
-            else
-            {
-                button1.Enabled = false;
-            }*/
 
         }
      

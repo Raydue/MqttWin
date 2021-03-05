@@ -36,7 +36,9 @@ namespace MqttWin
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.button3 = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
-            this.textBox3 = new System.Windows.Forms.TextBox();
+            this.TagSearch = new System.Windows.Forms.TextBox();
+            this.textBox5 = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // textBox1
@@ -105,21 +107,39 @@ namespace MqttWin
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
-            // textBox3
+            // TagSearch
             // 
-            this.textBox3.Location = new System.Drawing.Point(25, 99);
-            this.textBox3.Name = "textBox3";
-            this.textBox3.ReadOnly = true;
-            this.textBox3.Size = new System.Drawing.Size(328, 22);
-            this.textBox3.TabIndex = 9;
-            this.textBox3.Text = "先點選Topic所屬的Broker address，再新增Topic";
+            this.TagSearch.Location = new System.Drawing.Point(446, 99);
+            this.TagSearch.Name = "TagSearch";
+            this.TagSearch.Size = new System.Drawing.Size(297, 22);
+            this.TagSearch.TabIndex = 10;
+            // 
+            // textBox5
+            // 
+            this.textBox5.Location = new System.Drawing.Point(446, 126);
+            this.textBox5.Multiline = true;
+            this.textBox5.Name = "textBox5";
+            this.textBox5.ReadOnly = true;
+            this.textBox5.Size = new System.Drawing.Size(297, 297);
+            this.textBox5.TabIndex = 11;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(32, 102);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(249, 12);
+            this.label3.TabIndex = 12;
+            this.label3.Text = "先點選Topic所屬的Broker address，再新增Topic";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.textBox3);
+            this.ClientSize = new System.Drawing.Size(778, 435);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.textBox5);
+            this.Controls.Add(this.TagSearch);
             this.Controls.Add(this.button4);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.treeView1);
@@ -144,7 +164,9 @@ namespace MqttWin
         private System.Windows.Forms.TreeView treeView1;
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button4;
-        private System.Windows.Forms.TextBox textBox3;
+        private System.Windows.Forms.TextBox TagSearch;
+        private System.Windows.Forms.TextBox textBox5;
+        private System.Windows.Forms.Label label3;
     }
 }
 
