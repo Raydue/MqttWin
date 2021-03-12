@@ -12,6 +12,7 @@ using uPLibrary.Networking.M2Mqtt.Messages;
 using uPLibrary.Networking.M2Mqtt.Exceptions;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Microsoft.VisualBasic;
 
 namespace MqttWin
 {
@@ -19,10 +20,9 @@ namespace MqttWin
     {
         [System.Runtime.InteropServices.DllImport("kernel32.dll")]
         static extern bool AllocConsole();
-        
 
+        delegate void carry(string txt);
         private List<string> clients = new List<string>();
-        delegate void Tagparsing(string text); 
                   
 
         public Form1()
@@ -33,9 +33,10 @@ namespace MqttWin
 
         private void Form1_Load(object sender, EventArgs e)
         {
-                        
+            treeView1.Nodes.Add("Connectivity");
+            
         }
-       
+
        /* static void client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
             SubManager sub = new SubManager();
@@ -61,40 +62,7 @@ namespace MqttWin
             
             Console.WriteLine("===============================================");*/
         //}
-        List<TreeNode> nodechecked = new List<TreeNode>();
-        List<TreeNode> connectchecked = new List<TreeNode>();
 
-        void checkednodesMt(TreeNodeCollection nodes)
-        {
-            foreach (TreeNode node in nodes)
-            {
-                if (node.Checked)               //先把想要刪除掉的node加入到list中
-                {
-                    nodechecked.Add(node);
-                }
-                else
-                {
-                    checkednodesMt(node.Nodes);
-                }
-            }
-        }
-
-        void checkedconnectMt(TreeNodeCollection nodes)
-        {
-            foreach (TreeNode node in nodes)
-            {
-                if (node.Checked && node.Level==0)               //如果有找到，就加到List中
-                {
-                    connectchecked.Add(node) ;
-                   
-                }
-                else
-                {
-                    checkedconnectMt(node.Nodes);
-                    
-                }
-            }
-        }
 
         private void Form1_Formclosing(object sender, EventArgs e)
         {
@@ -103,36 +71,43 @@ namespace MqttWin
                 MqttClient client = new MqttClient(close);
                 client.Disconnect();     
             }
-           
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            string a = textBox2.Text;    
-            treeView1.Nodes.Add(a);
-           
+            string a = textBox2.Text;
+            List<string> list= a.Split(',').ToList<string>();
+            if (treeView1.SelectedNode != null)
+            {
+                foreach (var ch in list)
+                    treeView1.SelectedNode.Nodes.Add(ch);
+            }
+            else
+            {
+                MessageBox.Show("請選取Connectivity");
+            }
+                   
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
             string topic = textBox1.Text;
-            
-            try
+            List<string> list = topic.Split(',').ToList<string>();
+            if (treeView1.SelectedNode != null)
             {
-                treeView1.SelectedNode.Nodes.Add(topic) ;
-                               
+                foreach (var ch in list)
+                    treeView1.SelectedNode.Nodes.Add(ch);
             }
-            catch (Exception)
+            else
             {
                 MessageBox.Show("請點選Broker!!");
-            }
-            
+            } 
         }
         
 
         private void treeView1_AfterCheck(object sender, TreeViewEventArgs e)
         {
-            if (e.Node.Level == 0&&e.Node.Checked==true)
+            if (e.Node.Level == 1&&e.Node.Checked==true)
             {
                 //連線
                 /* MqttClient client = new MqttClient(e.Node.Text);
@@ -147,25 +122,72 @@ namespace MqttWin
                 e.Node.Tag = manager.CTag;
                 MessageBox.Show(e.Node.Text + " 已連線!");
             }
-            else if (e.Node.Level > 0 && e.Node.Checked==false)
+            else if (e.Node.Level > 1 && e.Node.Checked==false)
             {
                 //Unsub
-                MqttClient mqttClient = (MqttClient)e.Node.Parent.Tag;
+                MqttClient mqttClient = (MqttClient)e.Node.Tag;
                 mqttClient.Unsubscribe(new string[] { e.Node.Text });
                 
             }
-            else if (e.Node.Level > 0 && e.Node.Checked == true)
+            else if (e.Node.Level > 1 && e.Node.Checked == true)
             {
                 //Subscribe
-                SubManager manager = new SubManager(e.Node.Parent.Text,e.Node.Text);
-                manager.brokername = e.Node.Parent.Text;
+                SubManager manager = new SubManager(e.Node.Parent.Text,e.Node.Text,this);
+                e.Node.Tag = manager.CTag;
                // manager.Subscriber((MqttClient)e.Node.Parent.Tag, e.Node.Text, e.Node.Parent.Text,manager.brokername); 
                 
                 /*MqttClient mqttClient = (MqttClient)e.Node.Parent.Tag;
                 mqttClient.Subscribe(new string[] { e.Node.Text }, new byte[] { 0 });*/
             }
+        }
+
+        private void 新增TopicToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Form2 form2 = new Form2();
+            form2.Text = treeView1.SelectedNode.Text;
+            DialogResult result = form2.ShowDialog();
+            
+            if (result == DialogResult.OK)
+            {
+                List<string> list = form2.GetTpc().Split(',').ToList<string>();
+                if (treeView1.SelectedNode == null)
+                {
+                    foreach (var ch in list)
+                        treeView1.Nodes.Add(ch);
+                }
+                else if(treeView1.SelectedNode.IsSelected)
+                {
+                    foreach (var ch in list)
+                        treeView1.SelectedNode.Nodes.Add(ch);                   
+                }
+                treeView1.ExpandAll();
+            }         
 
         }
-     
+
+        private void treeView1_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                treeView1.SelectedNode = e.Node;
+            }  
+    
+        }
+        public string GetTagDT()
+        {
+            return textBox3.Text;
+        }
+        public void setTextBox4(string msg)
+        {
+            if (this.textBox4.InvokeRequired)
+            {
+                carry cary = new carry(setTextBox4);
+                this.Invoke(cary, new object[] { msg });
+            }
+            else
+            {
+                textBox4.Text = msg;
+            }
+        }
     }
 }
